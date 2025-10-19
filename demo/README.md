@@ -4,11 +4,10 @@ A Spring Boot application for tracking customer orders with role-based security 
 
 ## Features
 
-- RESTful CRUD API for managing orders (create, list, retrieve, update, delete, status-only updates).
+- RESTful CRUD API for managing orders (create, list, retrieve, update, delete, status-only updates, cancel).
 - Spring Data JPA persistence with MySQL in production and H2 in tests.
-- Spring Security basic authentication with ADMIN and USER roles.
-- HTML/JavaScript frontend under `src/main/resources/static/index.html` for listing orders and updating their status via `fetch`.
-- HTML/JavaScript frontend under `src/main/resources/static/index.html` for listing orders and updating their status via `fetch`.
+- Spring Security basic authentication with ADMIN and USER roles, including ownership checks so customers only see and cancel their own orders.
+- HTML/JavaScript frontend under `src/main/resources/static/index.html` for listing orders, creating new ones, editing, cancelling, and deleting (admin only) via `fetch`.
 - Automatic seeding of three sample orders on startup so you can explore the UI immediately.
 
 ## Project Structure
@@ -38,7 +37,9 @@ A Spring Boot application for tracking customer orders with role-based security 
 - ADMIN: `admin` / `admin123`
 - USER: `user` / `user123`
 
-ADMIN role can create, update, patch, and delete orders. USER role can read orders.
+**Admin capabilities:** full CRUD across all orders (create on behalf of any user, edit, update status, cancel, delete).
+
+**User/customer capabilities:** create orders for themselves, view only their own orders, cancel a pending order, and track current status.
 
 ## Testing
 
@@ -50,23 +51,26 @@ The build uses an in-memory H2 database so it can run without the MySQL instance
 
 ## API Overview
 
-| Method | Path                      | Description                 | Role |
-|--------|---------------------------|-----------------------------|------|
-| POST   | `/api/orders`             | Create order                | ADMIN |
-| GET    | `/api/orders`             | List all orders             | ADMIN/USER |
-| GET    | `/api/orders/{id}`        | Retrieve order by id        | ADMIN/USER |
-| PUT    | `/api/orders/{id}`        | Update order                | ADMIN |
-| PATCH  | `/api/orders/{id}/status` | Update only order status    | ADMIN |
-| DELETE | `/api/orders/{id}`        | Delete order                | ADMIN |
+| Method | Path                       | Description                          | Role |
+|--------|----------------------------|--------------------------------------|------|
+| POST   | `/api/orders`              | Create order                          | ADMIN/USER (admin may set owner) |
+| GET    | `/api/orders`              | List accessible orders (all or own)   | ADMIN/USER |
+| GET    | `/api/orders/{id}`         | Retrieve order by id                  | ADMIN/USER (own orders only for users) |
+| PUT    | `/api/orders/{id}`         | Update order                          | ADMIN |
+| PATCH  | `/api/orders/{id}/status`  | Update only order status              | ADMIN |
+| PATCH  | `/api/orders/{id}/cancel`  | Cancel order (user before shipping)   | ADMIN/USER |
+| DELETE | `/api/orders/{id}`         | Delete order                          | ADMIN |
 
 All endpoints require HTTP Basic authentication.
 
 ## Frontend Usage
 
 1. Open `http://localhost:8080/index.html` while the app runs.
-2. Enter credentials (use ADMIN to enable status updates).
+2. Enter credentials.
+   - Admin sessions show full controls (status dropdowns, edit/delete/cancel buttons, owner override when creating).
+   - User sessions show only their orders along with cancel buttons for pending orders.
 3. Click **Load Orders** to fetch data.
-4. Use the status dropdowns and **Update Status** buttons to patch orders.
+4. Use the create form, edit panel, cancellation, and (for admins) status/update/delete actions as needed.
 
 ## Sample cURL Commands
 
