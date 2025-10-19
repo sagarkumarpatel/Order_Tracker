@@ -26,11 +26,11 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
 
-        List<Order> demoOrders = List.of(
-                new Order(null, "Jane Doe", "Wireless Mouse", 2, 24.99, "Pending", LocalDateTime.now().minusDays(1)),
-                new Order(null, "John Smith", "Mechanical Keyboard", 1, 89.99, "Shipped", LocalDateTime.now().minusHours(6)),
-                new Order(null, "Alice Johnson", "USB-C Hub", 3, 39.5, "Delivered", LocalDateTime.now().minusDays(2))
-        );
+    List<Order> demoOrders = List.of(
+        new Order(null, "Jane Doe", "Wireless Mouse", 2, 24.99, "Pending", LocalDateTime.now().minusDays(1), "user"),
+        new Order(null, "John Smith", "Mechanical Keyboard", 1, 89.99, "Shipped", LocalDateTime.now().minusHours(6), "admin"),
+        new Order(null, "Alice Johnson", "USB-C Hub", 3, 39.5, "Delivered", LocalDateTime.now().minusDays(2), "user")
+    );
 
         orderRepository.saveAll(demoOrders);
     }

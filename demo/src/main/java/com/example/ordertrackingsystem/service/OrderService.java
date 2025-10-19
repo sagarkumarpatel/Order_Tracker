@@ -2,9 +2,9 @@ package com.example.ordertrackingsystem.service;
 
 import com.example.ordertrackingsystem.model.Order;
 import com.example.ordertrackingsystem.repository.OrderRepository;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
 
 /**
  * Business layer that orchestrates operations on {@link Order} entities.
@@ -21,15 +21,31 @@ public class OrderService {
     /**
      * Persists a new order using the repository.
      */
-    public Order createOrder(Order order) {
+    public Order createOrder(Order order, String ownerUsername) {
+        order.setId(null);
+        order.setCreatedBy(ownerUsername);
+        if (order.getStatus() == null || order.getStatus().isBlank()) {
+            order.setStatus("Pending");
+        }
         return orderRepository.save(order);
     }
 
     /**
-     * Returns every order stored in the system.
+     * Returns orders visible to the current actor.
      */
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    public List<Order> getOrdersAccessibleBy(String username, boolean isAdmin) {
+        return isAdmin ? orderRepository.findAll() : orderRepository.findByCreatedBy(username);
+    }
+
+    /**
+     * Retrieves a single order for the current actor, enforcing ownership.
+     */
+    public Order getOrderForUser(Long id, String username, boolean isAdmin) {
+        Order order = getOrderById(id);
+        if (!isAdmin && !username.equals(order.getCreatedBy())) {
+            throw new AccessDeniedException("Forbidden");
+        }
+        return order;
     }
 
     /**
@@ -70,6 +86,30 @@ public class OrderService {
     public Order updateOrderStatus(Long id, String status) {
         Order order = getOrderById(id);
         order.setStatus(status);
+        return orderRepository.save(order);
+    }
+
+    /**
+     * Cancels an order as long as it has not yet been shipped or delivered.
+     */
+    public Order cancelOrder(Long id, String username, boolean isAdmin) {
+        Order order = getOrderById(id);
+
+        if (!isAdmin && !username.equals(order.getCreatedBy())) {
+            throw new AccessDeniedException("Forbidden");
+        }
+
+        String currentStatus = order.getStatus();
+
+        if (currentStatus != null && currentStatus.equalsIgnoreCase("Cancelled")) {
+            throw new IllegalStateException("Order is already cancelled.");
+        }
+
+        if (!isAdmin && currentStatus != null && !currentStatus.equalsIgnoreCase("Pending")) {
+            throw new IllegalStateException("Only pending orders can be cancelled.");
+        }
+
+        order.setStatus("Cancelled");
         return orderRepository.save(order);
     }
 }

@@ -56,14 +56,15 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/orders/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/orders/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/orders/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAnyRole("ADMIN", "USER")
-                        .anyRequest().authenticated()
-                )
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers(HttpMethod.POST, "/api/orders/**").hasAnyRole("ADMIN", "USER")
+            .requestMatchers(HttpMethod.PUT, "/api/orders/**").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.PATCH, "/api/orders/*/cancel").hasAnyRole("ADMIN", "USER")
+            .requestMatchers(HttpMethod.PATCH, "/api/orders/**").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAnyRole("ADMIN", "USER")
+            .anyRequest().authenticated()
+        )
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();

@@ -1,5 +1,6 @@
 package com.example.ordertrackingsystem.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -30,6 +31,9 @@ public class Order {
 
     private LocalDateTime orderDate;
 
+    @Column(name = "created_by")
+    private String createdBy;
+
     /**
      * Default constructor required by JPA.
      */
@@ -40,6 +44,10 @@ public class Order {
      * Convenience constructor for quickly instantiating an order.
      */
     public Order(Long id, String customerName, String productName, int quantity, double price, String status, LocalDateTime orderDate) {
+        this(id, customerName, productName, quantity, price, status, orderDate, null);
+    }
+
+    public Order(Long id, String customerName, String productName, int quantity, double price, String status, LocalDateTime orderDate, String createdBy) {
         this.id = id;
         this.customerName = customerName;
         this.productName = productName;
@@ -47,6 +55,7 @@ public class Order {
         this.price = price;
         this.status = status;
         this.orderDate = orderDate;
+        this.createdBy = createdBy;
     }
 
     public Long getId() {
@@ -103,5 +112,13 @@ public class Order {
 
     public void setOrderDate(LocalDateTime orderDate) {
         this.orderDate = orderDate;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
     }
 }

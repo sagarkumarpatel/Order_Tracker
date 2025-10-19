@@ -46,9 +46,12 @@
             <option value="Pending">Pending</option>
             <option value="Shipped">Shipped</option>
             <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
         </select>
         <label for="orderDate">Order Date:</label>
         <input type="datetime-local" id="orderDate">
+        <label for="ownerUsername">Owner Username (admin only):</label>
+        <input type="text" id="ownerUsername" placeholder="user">
         <button id="createOrder">Create Order</button>
     </div>
 </section>
@@ -72,6 +75,7 @@
             <option value="Pending">Pending</option>
             <option value="Shipped">Shipped</option>
             <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
         </select>
         <label for="editOrderDate">Order Date:</label>
         <input type="datetime-local" id="editOrderDate">
@@ -86,6 +90,7 @@
     <tr>
         <th>ID</th>
         <th>Customer</th>
+    <th>Owner</th>
         <th>Product</th>
         <th>Quantity</th>
         <th>Price</th>
@@ -105,6 +110,9 @@
     const editInfo = document.getElementById('editOrderInfo');
     const saveOrderChangesButton = document.getElementById('saveOrderChanges');
     const cancelEditButton = document.getElementById('cancelEdit');
+    const ownerUsernameInput = document.getElementById('ownerUsername');
+    const STATUS_OPTIONS = ['Pending', 'Shipped', 'Delivered', 'Cancelled'];
+    const NON_CANCELLABLE_STATUSES = new Set(['shipped', 'delivered', 'cancelled']);
     const editFields = {
         customerName: document.getElementById('editCustomerName'),
         productName: document.getElementById('editProductName'),
@@ -157,26 +165,36 @@
         orders.forEach(order => {
             ordersCache.set(String(order.id), order);
             const row = document.createElement('tr');
+            const normalizedStatus = (order.status || '').toLowerCase();
+            const isCancellable = !NON_CANCELLABLE_STATUSES.has(normalizedStatus);
+            const adminSession = isAdminSession();
+            const statusControl = adminSession
+                ? `<select data-order-id="${order.id}">
+                        ${STATUS_OPTIONS
+                            .map(status => `<option value="${status}" ${order.status === status ? 'selected' : ''}>${status}</option>`)
+                            .join('')}
+                   </select>`
+                : `<span>${order.status || ''}</span>`;
+            const adminCancelButton = normalizedStatus !== 'cancelled'
+                ? `<button data-cancel-id="${order.id}">Cancel</button>`
+                : '';
+            const actionButtons = adminSession
+                ? `<button data-update-id="${order.id}">Update Status</button>
+                   <button data-edit-id="${order.id}">Edit</button>
+                   ${adminCancelButton}
+                   <button data-delete-id="${order.id}">Delete</button>`
+                : `${isCancellable ? `<button data-cancel-id="${order.id}">Cancel</button>` : ''}`;
 
             row.innerHTML = `
                 <td>${order.id}</td>
                 <td>${order.customerName}</td>
+                <td>${order.createdBy || ''}</td>
                 <td>${order.productName}</td>
                 <td>${order.quantity}</td>
                 <td>${order.price}</td>
-                <td>
-                    <select data-order-id="${order.id}">
-                        ${['Pending', 'Shipped', 'Delivered']
-                            .map(status => `<option value="${status}" ${order.status === status ? 'selected' : ''}>${status}</option>`)
-                            .join('')}
-                    </select>
-                </td>
+                <td>${statusControl}</td>
                 <td>${order.orderDate || ''}</td>
-                <td>
-                    <button data-update-id="${order.id}">Update Status</button>
-                    <button data-edit-id="${order.id}">Edit</button>
-                    <button data-delete-id="${order.id}">Delete</button>
-                </td>
+                <td>${actionButtons}</td>
             `;
 
             tableBody.appendChild(row);
@@ -205,6 +223,17 @@
                 await deleteOrder(id);
             });
         });
+
+        document.querySelectorAll('button[data-cancel-id]').forEach(button => {
+            button.addEventListener('click', async (event) => {
+                const id = event.target.getAttribute('data-cancel-id');
+                await cancelOrder(id);
+            });
+        });
+    }
+
+    function isAdminSession() {
+        return document.getElementById('username').value.trim().toLowerCase() === 'admin';
     }
 
     // Calls the PATCH endpoint to update only the order status.
@@ -232,6 +261,31 @@
         }
     }
 
+    async function cancelOrder(id) {
+        statusEl.textContent = `Cancelling order ${id}...`;
+
+        try {
+            const response = await fetch(`/api/orders/${id}/cancel`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': 'Basic ' + btoa(getCredentials())
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 409) {
+                    throw new Error(`Order ${id} can no longer be cancelled.`);
+                }
+                throw new Error(`Failed to cancel order ${id}: ${response.status}`);
+            }
+
+            statusEl.textContent = `Order ${id} cancelled.`;
+            await loadOrders();
+        } catch (error) {
+            statusEl.textContent = error.message;
+        }
+    }
+
     async function createOrder() {
         const customerName = document.getElementById('customerName').value.trim();
         const productName = document.getElementById('productName').value.trim();
@@ -239,6 +293,7 @@
         const price = Number(document.getElementById('price').value);
         const status = document.getElementById('statusInput').value;
         const orderDateRaw = document.getElementById('orderDate').value;
+        const ownerUsername = ownerUsernameInput.value.trim();
 
         if (!customerName || !productName || !orderDateRaw || Number.isNaN(quantity) || Number.isNaN(price)) {
             statusEl.textContent = 'Please fill out every field with valid values.';
@@ -248,20 +303,26 @@
         statusEl.textContent = 'Creating order...';
 
         try {
+            const payload = {
+                customerName,
+                productName,
+                quantity,
+                price,
+                status,
+                orderDate: orderDateRaw
+            };
+
+            if (ownerUsername) {
+                payload.createdBy = ownerUsername;
+            }
+
             const response = await fetch('/api/orders', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Basic ' + btoa(getCredentials())
                 },
-                body: JSON.stringify({
-                    customerName,
-                    productName,
-                    quantity,
-                    price,
-                    status,
-                    orderDate: orderDateRaw
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
@@ -274,6 +335,7 @@
             document.getElementById('price').value = '0';
             document.getElementById('statusInput').value = 'Pending';
             document.getElementById('orderDate').value = '';
+            ownerUsernameInput.value = '';
 
             statusEl.textContent = 'Order created successfully.';
             await loadOrders();
