@@ -12,6 +12,10 @@
         select { padding: 4px; }
         button { padding: 6px 10px; margin-left: 8px; }
         #status { margin-top: 10px; }
+        section { margin-top: 20px; padding: 12px; border: 1px solid #e0e0e0; background-color: #fafafa; }
+        section h2 { margin-top: 0; }
+        .form-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -26,7 +30,7 @@
 
 <section id="createOrderSection">
     <h2>Create New Order</h2>
-    <div>
+    <div class="form-row">
         <label for="customerName">Customer:</label>
         <input type="text" id="customerName" placeholder="Jane Doe">
         <label for="productName">Product:</label>
@@ -36,7 +40,7 @@
         <label for="price">Price:</label>
         <input type="number" id="price" step="0.01" min="0" value="0">
     </div>
-    <div style="margin-top: 10px;">
+    <div class="form-row">
         <label for="statusInput">Status:</label>
         <select id="statusInput">
             <option value="Pending">Pending</option>
@@ -46,6 +50,33 @@
         <label for="orderDate">Order Date:</label>
         <input type="datetime-local" id="orderDate">
         <button id="createOrder">Create Order</button>
+    </div>
+</section>
+
+<section id="editOrderSection" class="hidden">
+    <h2>Edit Order</h2>
+    <p id="editOrderInfo"></p>
+    <div class="form-row">
+        <label for="editCustomerName">Customer:</label>
+        <input type="text" id="editCustomerName">
+        <label for="editProductName">Product:</label>
+        <input type="text" id="editProductName">
+        <label for="editQuantity">Quantity:</label>
+        <input type="number" id="editQuantity" min="1">
+        <label for="editPrice">Price:</label>
+        <input type="number" id="editPrice" step="0.01" min="0">
+    </div>
+    <div class="form-row">
+        <label for="editStatus">Status:</label>
+        <select id="editStatus">
+            <option value="Pending">Pending</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Delivered">Delivered</option>
+        </select>
+        <label for="editOrderDate">Order Date:</label>
+        <input type="datetime-local" id="editOrderDate">
+        <button id="saveOrderChanges">Save Changes</button>
+        <button id="cancelEdit" type="button">Cancel</button>
     </div>
 </section>
 
@@ -70,9 +101,29 @@
     const tableBody = document.querySelector('#ordersTable tbody');
     const loadOrdersButton = document.getElementById('loadOrders');
     const createOrderButton = document.getElementById('createOrder');
+    const editSection = document.getElementById('editOrderSection');
+    const editInfo = document.getElementById('editOrderInfo');
+    const saveOrderChangesButton = document.getElementById('saveOrderChanges');
+    const cancelEditButton = document.getElementById('cancelEdit');
+    const editFields = {
+        customerName: document.getElementById('editCustomerName'),
+        productName: document.getElementById('editProductName'),
+        quantity: document.getElementById('editQuantity'),
+        price: document.getElementById('editPrice'),
+        status: document.getElementById('editStatus'),
+        orderDate: document.getElementById('editOrderDate')
+    };
+
+    let editingOrderId = null;
+    const ordersCache = new Map();
 
     loadOrdersButton.addEventListener('click', loadOrders);
     createOrderButton.addEventListener('click', createOrder);
+    saveOrderChangesButton.addEventListener('click', saveOrderChanges);
+    cancelEditButton.addEventListener('click', () => {
+        editingOrderId = null;
+        editSection.classList.add('hidden');
+    });
 
     // Fetches the order list and renders it in the table.
     async function loadOrders() {
@@ -101,8 +152,10 @@
     // Renders table rows for each order and wires the update handlers.
     function renderOrders(orders) {
         tableBody.innerHTML = '';
+        ordersCache.clear();
 
         orders.forEach(order => {
+            ordersCache.set(String(order.id), order);
             const row = document.createElement('tr');
 
             row.innerHTML = `
@@ -119,7 +172,11 @@
                     </select>
                 </td>
                 <td>${order.orderDate || ''}</td>
-                <td><button data-update-id="${order.id}">Update Status</button></td>
+                <td>
+                    <button data-update-id="${order.id}">Update Status</button>
+                    <button data-edit-id="${order.id}">Edit</button>
+                    <button data-delete-id="${order.id}">Delete</button>
+                </td>
             `;
 
             tableBody.appendChild(row);
@@ -132,6 +189,20 @@
                 const newStatus = select.value;
 
                 await updateOrderStatus(id, newStatus);
+            });
+        });
+
+        document.querySelectorAll('button[data-edit-id]').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const id = event.target.getAttribute('data-edit-id');
+                startEditing(id);
+            });
+        });
+
+        document.querySelectorAll('button[data-delete-id]').forEach(button => {
+            button.addEventListener('click', async (event) => {
+                const id = event.target.getAttribute('data-delete-id');
+                await deleteOrder(id);
             });
         });
     }
@@ -205,6 +276,99 @@
             document.getElementById('orderDate').value = '';
 
             statusEl.textContent = 'Order created successfully.';
+            await loadOrders();
+        } catch (error) {
+            statusEl.textContent = error.message;
+        }
+    }
+
+    function startEditing(id) {
+        const order = ordersCache.get(String(id));
+        if (!order) {
+            statusEl.textContent = 'Unable to locate the selected order.';
+            return;
+        }
+
+        editingOrderId = id;
+        editInfo.textContent = `Editing order #${id}`;
+        editFields.customerName.value = order.customerName || '';
+        editFields.productName.value = order.productName || '';
+        editFields.quantity.value = order.quantity;
+        editFields.price.value = order.price;
+        editFields.status.value = order.status || 'Pending';
+        editFields.orderDate.value = order.orderDate ? order.orderDate.slice(0, 16) : '';
+        editSection.classList.remove('hidden');
+    }
+
+    async function saveOrderChanges() {
+        if (!editingOrderId) {
+            statusEl.textContent = 'Select an order to edit first.';
+            return;
+        }
+
+        const payload = {
+            customerName: editFields.customerName.value.trim(),
+            productName: editFields.productName.value.trim(),
+            quantity: Number(editFields.quantity.value),
+            price: Number(editFields.price.value),
+            status: editFields.status.value,
+            orderDate: editFields.orderDate.value
+        };
+
+        if (!payload.customerName || !payload.productName || !payload.orderDate || Number.isNaN(payload.quantity) || Number.isNaN(payload.price)) {
+            statusEl.textContent = 'Please provide valid values for every edit field.';
+            return;
+        }
+
+        statusEl.textContent = `Saving changes for order ${editingOrderId}...`;
+
+        try {
+            const response = await fetch(`/api/orders/${editingOrderId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + btoa(getCredentials())
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to update order ${editingOrderId}: ${response.status}`);
+            }
+
+            statusEl.textContent = `Order ${editingOrderId} updated.`;
+            editingOrderId = null;
+            editSection.classList.add('hidden');
+            await loadOrders();
+        } catch (error) {
+            statusEl.textContent = error.message;
+        }
+    }
+
+    async function deleteOrder(id) {
+        if (!confirm(`Delete order #${id}?`)) {
+            return;
+        }
+
+        statusEl.textContent = `Deleting order ${id}...`;
+
+        try {
+            const response = await fetch(`/api/orders/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Basic ' + btoa(getCredentials())
+                }
+            });
+
+            if (response.status !== 204) {
+                throw new Error(`Failed to delete order ${id}: ${response.status}`);
+            }
+
+            statusEl.textContent = `Order ${id} deleted.`;
+            if (editingOrderId === id) {
+                editingOrderId = null;
+                editSection.classList.add('hidden');
+            }
             await loadOrders();
         } catch (error) {
             statusEl.textContent = error.message;
