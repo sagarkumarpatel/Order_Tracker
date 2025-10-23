@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Tracking System – Admin Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<header class="site-header">
+    <div class="container header-content">
+        <h1 class="brand">Admin Console</h1>
+        <nav class="site-nav">
+            <a href="index.html#products">Shop</a>
+            <a href="index.html#track">Tracker</a>
+            <a href="#management">Manage Orders</a>
+        </nav>
+    </div>
+</header>
+
+<main class="container" id="management">
+    <section class="card credentials-card">
+        <h2>API Credentials</h2>
+        <p class="section-desc">Use a valid Spring Security user to load and manage orders (e.g. <code>admin/admin123</code>).</p>
+        <div class="credential-grid">
+            <label>
+                <span>Username</span>
+                <input type="text" id="username" value="admin" autocomplete="username">
+            </label>
+            <label>
+                <span>Password</span>
+                <input type="password" id="password" value="admin123" autocomplete="current-password">
+            </label>
+            <button type="button" id="loadOrders" class="primary">Load Orders</button>
+        </div>
+        <p id="status" class="status"></p>
+    </section>
+
+    <section class="card create-card">
+        <h2>Create New Order</h2>
+        <form id="createOrderForm" class="form-grid" novalidate>
+            <label>
+                <span>Customer</span>
+                <input type="text" id="customerName" placeholder="Jane Doe" required>
+            </label>
+            <label>
+                <span>Product</span>
+                <input type="text" id="productName" placeholder="Wireless Earbuds" required>
+            </label>
+            <label>
+                <span>Quantity</span>
+                <input type="number" id="quantity" min="1" value="1" required>
+            </label>
+            <label>
+                <span>Price</span>
+                <input type="number" id="price" step="0.01" min="0" value="0" required>
+            </label>
+            <label>
+                <span>Status</span>
+                <select id="statusInput">
+                    <option value="Pending">Pending</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </label>
+            <label>
+                <span>Order Date</span>
+                <input type="datetime-local" id="orderDate">
+            </label>
+            <label>
+                <span>Owner Username (optional)</span>
+                <input type="text" id="ownerUsername" placeholder="user">
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="primary">Create Order</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="card product-card" id="products">
+        <h2>Manage Products</h2>
+        <p class="section-desc">Add items to the storefront catalog. Shoppers will see them instantly.</p>
+        <form id="productForm" class="form-grid" novalidate>
+            <label>
+                <span>Product Name</span>
+                <input type="text" id="catalogProductName" placeholder="Wireless Earbuds" required>
+            </label>
+            <label>
+                <span>Description</span>
+                <textarea id="catalogProductDescription" rows="3" placeholder="Short marketing description" required></textarea>
+            </label>
+            <label>
+                <span>Price</span>
+                <input type="number" id="catalogProductPrice" step="0.01" min="0" placeholder="59.99" required>
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="primary">Add Product</button>
+                <button type="button" id="refreshProducts" class="secondary">Refresh List</button>
+            </div>
+        </form>
+        <p id="productStatus" class="status"></p>
+        <div class="table-responsive">
+            <table id="productTable">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Created At</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="editOrderSection" class="card hidden">
+        <h2>Edit Order</h2>
+        <p id="editOrderInfo" class="section-desc"></p>
+        <form id="editOrderForm" class="form-grid" novalidate>
+            <label>
+                <span>Customer</span>
+                <input type="text" id="editCustomerName" required>
+            </label>
+            <label>
+                <span>Product</span>
+                <input type="text" id="editProductName" required>
+            </label>
+            <label>
+                <span>Quantity</span>
+                <input type="number" id="editQuantity" min="1" required>
+            </label>
+            <label>
+                <span>Price</span>
+                <input type="number" id="editPrice" step="0.01" min="0" required>
+            </label>
+            <label>
+                <span>Status</span>
+                <select id="editStatus">
+                    <option value="Pending">Pending</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </label>
+            <label>
+                <span>Order Date</span>
+                <input type="datetime-local" id="editOrderDate" required>
+            </label>
+            <div class="form-actions">
+                <button type="submit" class="primary">Save Changes</button>
+                <button type="button" id="cancelEdit" class="secondary">Cancel</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="card table-card">
+        <div class="table-header">
+            <h2>All Orders</h2>
+            <button type="button" id="refreshOrders" class="secondary">Refresh</button>
+        </div>
+        <div class="table-responsive">
+            <table id="ordersTable">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer</th>
+                    <th>Owner</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Order Date</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-content">
+        <p>&copy; 2025 Order Tracking System. Admin tools for reviewing and managing orders.</p>
+    </div>
+</footer>
+
+<script defer src="admin.js"></script>
+</body>
+</html>

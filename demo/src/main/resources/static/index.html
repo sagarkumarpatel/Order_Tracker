@@ -4,445 +4,146 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Tracking System</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background-color: #f4f4f4; }
-        select { padding: 4px; }
-        button { padding: 6px 10px; margin-left: 8px; }
-        #status { margin-top: 10px; }
-        section { margin-top: 20px; padding: 12px; border: 1px solid #e0e0e0; background-color: #fafafa; }
-        section h2 { margin-top: 0; }
-        .form-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-        .hidden { display: none; }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>Order Tracking System</h1>
-<div>
-    <label for="username">Username:</label>
-    <input type="text" id="username" value="user">
-    <label for="password">Password:</label>
-    <input type="password" id="password" value="user123">
-    <button id="loadOrders">Load Orders</button>
-</div>
+    <header class="site-header">
+        <div class="container header-content">
+            <h1 class="brand">Order Tracking System</h1>
+            <nav class="site-nav">
+                <a href="#products">Products</a>
+                <a href="#shop">Cart</a>
+                <a href="#track">Track</a>
+                <a href="#support">Support</a>
+                <a href="admin.html">Admin Console</a>
+            </nav>
+        </div>
+    </header>
 
-<section id="createOrderSection">
-    <h2>Create New Order</h2>
-    <div class="form-row">
-        <label for="customerName">Customer:</label>
-        <input type="text" id="customerName" placeholder="Jane Doe">
-        <label for="productName">Product:</label>
-        <input type="text" id="productName" placeholder="Wireless Mouse">
-        <label for="quantity">Quantity:</label>
-        <input type="number" id="quantity" min="1" value="1">
-        <label for="price">Price:</label>
-        <input type="number" id="price" step="0.01" min="0" value="0">
-    </div>
-    <div class="form-row">
-        <label for="statusInput">Status:</label>
-        <select id="statusInput">
-            <option value="Pending">Pending</option>
-            <option value="Shipped">Shipped</option>
-            <option value="Delivered">Delivered</option>
-            <option value="Cancelled">Cancelled</option>
-        </select>
-        <label for="orderDate">Order Date:</label>
-        <input type="datetime-local" id="orderDate">
-        <label for="ownerUsername">Owner Username (admin only):</label>
-        <input type="text" id="ownerUsername" placeholder="user">
-        <button id="createOrder">Create Order</button>
-    </div>
-</section>
+    <main class="container">
+        <section class="hero" id="shop">
+            <h2>Shop. Checkout. Track.</h2>
+            <p>Choose from our curated products, add them to your cart, place the order, then track it instantly from the same page.</p>
+            <a class="button-secondary" href="#products">Start shopping</a>
+        </section>
 
-<section id="editOrderSection" class="hidden">
-    <h2>Edit Order</h2>
-    <p id="editOrderInfo"></p>
-    <div class="form-row">
-        <label for="editCustomerName">Customer:</label>
-        <input type="text" id="editCustomerName">
-        <label for="editProductName">Product:</label>
-        <input type="text" id="editProductName">
-        <label for="editQuantity">Quantity:</label>
-        <input type="number" id="editQuantity" min="1">
-        <label for="editPrice">Price:</label>
-        <input type="number" id="editPrice" step="0.01" min="0">
-    </div>
-    <div class="form-row">
-        <label for="editStatus">Status:</label>
-        <select id="editStatus">
-            <option value="Pending">Pending</option>
-            <option value="Shipped">Shipped</option>
-            <option value="Delivered">Delivered</option>
-            <option value="Cancelled">Cancelled</option>
-        </select>
-        <label for="editOrderDate">Order Date:</label>
-        <input type="datetime-local" id="editOrderDate">
-        <button id="saveOrderChanges">Save Changes</button>
-        <button id="cancelEdit" type="button">Cancel</button>
-    </div>
-</section>
+        <section id="products" class="card products">
+            <h2>Featured Products</h2>
+            <p class="section-desc">Add any product to your cart. You can purchase multiple items in one checkout.</p>
+            <p id="productMessage" class="product-message"></p>
+            <div class="product-grid" id="product-grid"></div>
+        </section>
 
-<div id="status"></div>
-<table id="ordersTable">
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>Customer</th>
-    <th>Owner</th>
-        <th>Product</th>
-        <th>Quantity</th>
-        <th>Price</th>
-        <th>Status</th>
-        <th>Order Date</th>
-        <th>Actions</th>
-    </tr>
-    </thead>
-    <tbody></tbody>
-</table>
-<script>
-    const statusEl = document.getElementById('status');
-    const tableBody = document.querySelector('#ordersTable tbody');
-    const loadOrdersButton = document.getElementById('loadOrders');
-    const createOrderButton = document.getElementById('createOrder');
-    const editSection = document.getElementById('editOrderSection');
-    const editInfo = document.getElementById('editOrderInfo');
-    const saveOrderChangesButton = document.getElementById('saveOrderChanges');
-    const cancelEditButton = document.getElementById('cancelEdit');
-    const ownerUsernameInput = document.getElementById('ownerUsername');
-    const STATUS_OPTIONS = ['Pending', 'Shipped', 'Delivered', 'Cancelled'];
-    const NON_CANCELLABLE_STATUSES = new Set(['shipped', 'delivered', 'cancelled']);
-    const editFields = {
-        customerName: document.getElementById('editCustomerName'),
-        productName: document.getElementById('editProductName'),
-        quantity: document.getElementById('editQuantity'),
-        price: document.getElementById('editPrice'),
-        status: document.getElementById('editStatus'),
-        orderDate: document.getElementById('editOrderDate')
-    };
+        <section class="shop-layout">
+            <article class="card cart-panel">
+                <h2>Your Cart</h2>
+                <p id="cart-empty" class="section-desc">Your cart is empty. Add some great products above.</p>
+                <ul id="cart-items" class="cart-items"></ul>
+                <div id="cart-summary" class="cart-summary hidden">
+                    <div class="cart-total-row">
+                        <span>Total</span>
+                        <strong id="cart-total">$0.00</strong>
+                    </div>
+                </div>
+                <p id="cart-feedback" class="cart-feedback hidden"></p>
+            </article>
 
-    let editingOrderId = null;
-    const ordersCache = new Map();
+            <article class="card checkout-panel">
+                <h2>Checkout</h2>
+                <p class="section-desc">Provide your details and use your API credentials to place the order.</p>
+                <form id="checkout-form" class="checkout-form" novalidate>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="customerName">Customer Name</label>
+                            <input type="text" id="customerName" name="customerName" placeholder="Jane Doe" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email (optional)</label>
+                            <input type="email" id="email" name="email" placeholder="jane@example.com">
+                        </div>
+                        <div class="form-group form-group--full">
+                            <label for="address">Shipping Address (optional)</label>
+                            <textarea id="address" name="address" rows="3" placeholder="123 Market Street, Springfield"></textarea>
+                        </div>
+                    </div>
+                    <fieldset class="credentials">
+                        <legend>Backend Credentials</legend>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                <input type="text" id="username" name="username" value="user" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" id="password" name="password" value="user123" required>
+                            </div>
+                        </div>
+                        <p class="credentials-note">Use your Spring Security user (try <code>user/user123</code> or <code>admin/admin123</code>). These credentials never leave your browser—they are only sent to the backend when you place the order.</p>
+                    </fieldset>
+                    <button type="submit" class="checkout-button">Place Order</button>
+                </form>
+                <p id="checkout-feedback" class="checkout-feedback"></p>
+                <div id="created-orders-wrapper" class="recent-orders hidden">
+                    <h3>Recently Created Orders</h3>
+                    <ul id="created-orders"></ul>
+                </div>
+            </article>
+        </section>
 
-    loadOrdersButton.addEventListener('click', loadOrders);
-    createOrderButton.addEventListener('click', createOrder);
-    saveOrderChangesButton.addEventListener('click', saveOrderChanges);
-    cancelEditButton.addEventListener('click', () => {
-        editingOrderId = null;
-        editSection.classList.add('hidden');
-    });
+        <section id="track" class="tracking-card">
+            <h2>Track an Order</h2>
+            <p class="intro">Enter an order ID to fetch the current status. Any orders you create above will appear in the list automatically.</p>
+            <form id="track-form" class="track-form" novalidate>
+                <label for="orderId" class="sr-only">Order ID</label>
+                <div class="input-group">
+                    <input type="text" id="orderId" name="orderId" placeholder="e.g., 42" autocomplete="off" required>
+                    <button type="submit">Check Status</button>
+                </div>
+            </form>
+            <div id="feedback" class="message" role="status" aria-live="polite"></div>
+            <article id="result-card" class="result-card hidden" aria-live="polite">
+                <h3>Order Details</h3>
+                <dl class="details-grid">
+                    <div class="detail">
+                        <dt>Order ID</dt>
+                        <dd id="result-orderId">—</dd>
+                    </div>
+                    <div class="detail">
+                        <dt>Customer Name</dt>
+                        <dd id="result-customer">—</dd>
+                    </div>
+                    <div class="detail">
+                        <dt>Status</dt>
+                        <dd id="result-status">—</dd>
+                    </div>
+                    <div class="detail">
+                        <dt>Estimated Delivery</dt>
+                        <dd id="result-delivery">—</dd>
+                    </div>
+                </dl>
+            </article>
+        </section>
 
-    // Fetches the order list and renders it in the table.
-    async function loadOrders() {
-        statusEl.textContent = 'Loading orders...';
-        tableBody.innerHTML = '';
+        <section id="about" class="info-card">
+            <h2>About This Portal</h2>
+            <p>Stay informed at every step of your order journey. This tracker connects directly to our backend services to provide up-to-date information on shipping progress and delivery timelines.</p>
+        </section>
 
-        try {
-            const response = await fetch('/api/orders', {
-                headers: {
-                    'Authorization': 'Basic ' + btoa(getCredentials())
-                }
-            });
+        <section id="support" class="info-card">
+            <h2>Need Help?</h2>
+            <p>If you have any questions about your order, please contact our support team at <a href="mailto:support@example.com">support@example.com</a> or call (800) 555-0199.</p>
+        </section>
+    </main>
 
-            if (!response.ok) {
-                throw new Error('Failed to load orders: ' + response.status);
-            }
+    <footer class="site-footer">
+        <div class="container footer-content">
+            <p>&copy; 2025 Order Tracking System. Built with Spring Boot and modern web standards.</p>
+        </div>
+    </footer>
 
-            const orders = await response.json();
-            renderOrders(orders);
-            statusEl.textContent = `Loaded ${orders.length} order(s).`;
-        } catch (error) {
-            statusEl.textContent = error.message;
-        }
-    }
-
-    // Renders table rows for each order and wires the update handlers.
-    function renderOrders(orders) {
-        tableBody.innerHTML = '';
-        ordersCache.clear();
-
-        orders.forEach(order => {
-            ordersCache.set(String(order.id), order);
-            const row = document.createElement('tr');
-            const normalizedStatus = (order.status || '').toLowerCase();
-            const isCancellable = !NON_CANCELLABLE_STATUSES.has(normalizedStatus);
-            const adminSession = isAdminSession();
-            const statusControl = adminSession
-                ? `<select data-order-id="${order.id}">
-                        ${STATUS_OPTIONS
-                            .map(status => `<option value="${status}" ${order.status === status ? 'selected' : ''}>${status}</option>`)
-                            .join('')}
-                   </select>`
-                : `<span>${order.status || ''}</span>`;
-            const adminCancelButton = normalizedStatus !== 'cancelled'
-                ? `<button data-cancel-id="${order.id}">Cancel</button>`
-                : '';
-            const actionButtons = adminSession
-                ? `<button data-update-id="${order.id}">Update Status</button>
-                   <button data-edit-id="${order.id}">Edit</button>
-                   ${adminCancelButton}
-                   <button data-delete-id="${order.id}">Delete</button>`
-                : `${isCancellable ? `<button data-cancel-id="${order.id}">Cancel</button>` : ''}`;
-
-            row.innerHTML = `
-                <td>${order.id}</td>
-                <td>${order.customerName}</td>
-                <td>${order.createdBy || ''}</td>
-                <td>${order.productName}</td>
-                <td>${order.quantity}</td>
-                <td>${order.price}</td>
-                <td>${statusControl}</td>
-                <td>${order.orderDate || ''}</td>
-                <td>${actionButtons}</td>
-            `;
-
-            tableBody.appendChild(row);
-        });
-
-        document.querySelectorAll('button[data-update-id]').forEach(button => {
-            button.addEventListener('click', async (event) => {
-                const id = event.target.getAttribute('data-update-id');
-                const select = document.querySelector(`select[data-order-id="${id}"]`);
-                const newStatus = select.value;
-
-                await updateOrderStatus(id, newStatus);
-            });
-        });
-
-        document.querySelectorAll('button[data-edit-id]').forEach(button => {
-            button.addEventListener('click', (event) => {
-                const id = event.target.getAttribute('data-edit-id');
-                startEditing(id);
-            });
-        });
-
-        document.querySelectorAll('button[data-delete-id]').forEach(button => {
-            button.addEventListener('click', async (event) => {
-                const id = event.target.getAttribute('data-delete-id');
-                await deleteOrder(id);
-            });
-        });
-
-        document.querySelectorAll('button[data-cancel-id]').forEach(button => {
-            button.addEventListener('click', async (event) => {
-                const id = event.target.getAttribute('data-cancel-id');
-                await cancelOrder(id);
-            });
-        });
-    }
-
-    function isAdminSession() {
-        return document.getElementById('username').value.trim().toLowerCase() === 'admin';
-    }
-
-    // Calls the PATCH endpoint to update only the order status.
-    async function updateOrderStatus(id, status) {
-        statusEl.textContent = `Updating order ${id}...`;
-
-        try {
-            const response = await fetch(`/api/orders/${id}/status`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + btoa(getCredentials())
-                },
-                body: JSON.stringify({ status })
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to update order ${id}: ${response.status}`);
-            }
-
-            statusEl.textContent = `Order ${id} updated to ${status}.`;
-            await loadOrders();
-        } catch (error) {
-            statusEl.textContent = error.message;
-        }
-    }
-
-    async function cancelOrder(id) {
-        statusEl.textContent = `Cancelling order ${id}...`;
-
-        try {
-            const response = await fetch(`/api/orders/${id}/cancel`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': 'Basic ' + btoa(getCredentials())
-                }
-            });
-
-            if (!response.ok) {
-                if (response.status === 409) {
-                    throw new Error(`Order ${id} can no longer be cancelled.`);
-                }
-                throw new Error(`Failed to cancel order ${id}: ${response.status}`);
-            }
-
-            statusEl.textContent = `Order ${id} cancelled.`;
-            await loadOrders();
-        } catch (error) {
-            statusEl.textContent = error.message;
-        }
-    }
-
-    async function createOrder() {
-        const customerName = document.getElementById('customerName').value.trim();
-        const productName = document.getElementById('productName').value.trim();
-        const quantity = Number(document.getElementById('quantity').value);
-        const price = Number(document.getElementById('price').value);
-        const status = document.getElementById('statusInput').value;
-        const orderDateRaw = document.getElementById('orderDate').value;
-        const ownerUsername = ownerUsernameInput.value.trim();
-
-        if (!customerName || !productName || !orderDateRaw || Number.isNaN(quantity) || Number.isNaN(price)) {
-            statusEl.textContent = 'Please fill out every field with valid values.';
-            return;
-        }
-
-        statusEl.textContent = 'Creating order...';
-
-        try {
-            const payload = {
-                customerName,
-                productName,
-                quantity,
-                price,
-                status,
-                orderDate: orderDateRaw
-            };
-
-            if (ownerUsername) {
-                payload.createdBy = ownerUsername;
-            }
-
-            const response = await fetch('/api/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + btoa(getCredentials())
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to create order: ${response.status}`);
-            }
-
-            document.getElementById('customerName').value = '';
-            document.getElementById('productName').value = '';
-            document.getElementById('quantity').value = '1';
-            document.getElementById('price').value = '0';
-            document.getElementById('statusInput').value = 'Pending';
-            document.getElementById('orderDate').value = '';
-            ownerUsernameInput.value = '';
-
-            statusEl.textContent = 'Order created successfully.';
-            await loadOrders();
-        } catch (error) {
-            statusEl.textContent = error.message;
-        }
-    }
-
-    function startEditing(id) {
-        const order = ordersCache.get(String(id));
-        if (!order) {
-            statusEl.textContent = 'Unable to locate the selected order.';
-            return;
-        }
-
-        editingOrderId = id;
-        editInfo.textContent = `Editing order #${id}`;
-        editFields.customerName.value = order.customerName || '';
-        editFields.productName.value = order.productName || '';
-        editFields.quantity.value = order.quantity;
-        editFields.price.value = order.price;
-        editFields.status.value = order.status || 'Pending';
-        editFields.orderDate.value = order.orderDate ? order.orderDate.slice(0, 16) : '';
-        editSection.classList.remove('hidden');
-    }
-
-    async function saveOrderChanges() {
-        if (!editingOrderId) {
-            statusEl.textContent = 'Select an order to edit first.';
-            return;
-        }
-
-        const payload = {
-            customerName: editFields.customerName.value.trim(),
-            productName: editFields.productName.value.trim(),
-            quantity: Number(editFields.quantity.value),
-            price: Number(editFields.price.value),
-            status: editFields.status.value,
-            orderDate: editFields.orderDate.value
-        };
-
-        if (!payload.customerName || !payload.productName || !payload.orderDate || Number.isNaN(payload.quantity) || Number.isNaN(payload.price)) {
-            statusEl.textContent = 'Please provide valid values for every edit field.';
-            return;
-        }
-
-        statusEl.textContent = `Saving changes for order ${editingOrderId}...`;
-
-        try {
-            const response = await fetch(`/api/orders/${editingOrderId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + btoa(getCredentials())
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to update order ${editingOrderId}: ${response.status}`);
-            }
-
-            statusEl.textContent = `Order ${editingOrderId} updated.`;
-            editingOrderId = null;
-            editSection.classList.add('hidden');
-            await loadOrders();
-        } catch (error) {
-            statusEl.textContent = error.message;
-        }
-    }
-
-    async function deleteOrder(id) {
-        if (!confirm(`Delete order #${id}?`)) {
-            return;
-        }
-
-        statusEl.textContent = `Deleting order ${id}...`;
-
-        try {
-            const response = await fetch(`/api/orders/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': 'Basic ' + btoa(getCredentials())
-                }
-            });
-
-            if (response.status !== 204) {
-                throw new Error(`Failed to delete order ${id}: ${response.status}`);
-            }
-
-            statusEl.textContent = `Order ${id} deleted.`;
-            if (editingOrderId === id) {
-                editingOrderId = null;
-                editSection.classList.add('hidden');
-            }
-            await loadOrders();
-        } catch (error) {
-            statusEl.textContent = error.message;
-        }
-    }
-
-    // Returns the credentials typed by the user in "username"/"password" inputs.
-    function getCredentials() {
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        return `${username}:${password}`;
-    }
-</script>
+    <script defer src="script.js"></script>
 </body>
 </html>
