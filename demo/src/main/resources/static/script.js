@@ -166,17 +166,20 @@ async function loadProducts() {
 
         const payload = await response.json();
         catalog = Array.isArray(payload)
-            ? payload.map((item) => ({
-                id: item.id != null ? String(item.id) : crypto.randomUUID(),
-                name: item.name || 'Untitled Product',
-                description: item.description || 'No description provided.',
-                price: Number(item.price ?? 0)
-            }))
+            ? payload
+                .filter((item) => item?.featured !== false)
+                .map((item) => ({
+                    id: item.id != null ? String(item.id) : crypto.randomUUID(),
+                    name: item.name || 'Untitled Product',
+                    description: item.description || 'No description provided.',
+                    price: Number(item.price ?? 0),
+                    imageUrl: typeof item.imageUrl === 'string' ? item.imageUrl : ''
+                }))
             : [];
 
         renderProducts();
         if (catalog.length === 0) {
-            setProductMessage('No products available yet. Check back soon.');
+            setProductMessage('No featured products yet. Add some from the admin console.');
         } else {
             setProductMessage('Choose an item to add it to your cart.');
         }
@@ -195,16 +198,37 @@ function renderProducts() {
     catalog.forEach((product) => {
         const card = document.createElement('article');
         card.className = 'product-card';
-        card.innerHTML = `
-            <div>
-                <h3>${product.name}</h3>
-                <p>${product.description}</p>
-            </div>
-            <div class="product-meta">
-                <span class="price-tag">${formatCurrency(product.price)}</span>
-                <button type="button" data-product-id="${product.id}">Add to Cart</button>
-            </div>
-        `;
+
+        if (product.imageUrl) {
+            const imageWrapper = document.createElement('div');
+            imageWrapper.className = 'product-image';
+            const image = document.createElement('img');
+            image.src = product.imageUrl;
+            image.alt = product.name || 'Featured product';
+            imageWrapper.appendChild(image);
+            card.appendChild(imageWrapper);
+        }
+
+        const copy = document.createElement('div');
+        const heading = document.createElement('h3');
+        heading.textContent = product.name;
+        const summary = document.createElement('p');
+        summary.textContent = product.description;
+        copy.append(heading, summary);
+        card.appendChild(copy);
+
+        const meta = document.createElement('div');
+        meta.className = 'product-meta';
+        const price = document.createElement('span');
+        price.className = 'price-tag';
+        price.textContent = formatCurrency(product.price);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.productId = product.id;
+        button.textContent = 'Add to Cart';
+        meta.append(price, button);
+        card.appendChild(meta);
+
         fragment.appendChild(card);
     });
 
@@ -443,7 +467,7 @@ function buildOrderDate() {
 }
 
 function formatCurrency(value) {
-    return currencyFormatter.format(value);
+    return currencyFormatter.format(Number.isFinite(value) ? value : 0);
 }
 
 function formatDelivery(isoString, status) {

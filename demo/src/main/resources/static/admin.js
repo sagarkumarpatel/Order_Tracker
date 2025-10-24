@@ -12,6 +12,8 @@ const productForm = document.getElementById('productForm');
 const productStatusEl = document.getElementById('productStatus');
 const productTableBody = document.querySelector('#productTable tbody');
 const refreshProductsButton = document.getElementById('refreshProducts');
+const productImageInput = document.getElementById('catalogProductImage');
+const productFeaturedInput = document.getElementById('catalogProductFeatured');
 
 const STATUS_OPTIONS = ['Pending', 'Shipped', 'Delivered', 'Cancelled'];
 const NON_CANCELLABLE_STATUSES = new Set(['shipped', 'delivered', 'cancelled']);
@@ -146,13 +148,13 @@ function renderProducts() {
 
     productsCache.forEach((product) => {
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${product.id ?? ''}</td>
-            <td>${product.name ?? ''}</td>
-            <td>${product.description ?? ''}</td>
-            <td>${formatCurrency(Number(product.price ?? 0))}</td>
-            <td>${formatDate(product.createdAt)}</td>
-        `;
+        row.appendChild(createCell(product.id ?? ''));
+        row.appendChild(createCell(product.name ?? ''));
+        row.appendChild(createCell(product.description ?? ''));
+        row.appendChild(createCell(formatCurrency(Number(product.price ?? 0))));
+        row.appendChild(createCell(product.featured !== false ? 'Yes' : 'No'));
+        row.appendChild(createLinkCell(product.imageUrl));
+        row.appendChild(createCell(formatDate(product.createdAt)));
         productTableBody.appendChild(row);
     });
 }
@@ -167,12 +169,16 @@ async function handleCreateProduct(event) {
     console.log('Submitting product form', {
         nameRaw: nameInput.value,
         descriptionRaw: descriptionInput.value,
-        priceRaw: priceInput.value
+        priceRaw: priceInput.value,
+        imageUrlRaw: productImageInput?.value,
+        featuredRaw: productFeaturedInput?.checked
     });
 
     const name = nameInput.value.trim();
     const description = descriptionInput.value.trim();
     const priceValue = Number(priceInput.value);
+    const imageUrl = productImageInput?.value.trim() ?? '';
+    const featured = productFeaturedInput ? !!productFeaturedInput.checked : true;
 
     if (!name || !description || Number.isNaN(priceValue) || priceValue < 0) {
         setProductStatus('Enter a name, description, and a non-negative price.', true);
@@ -191,7 +197,9 @@ async function handleCreateProduct(event) {
             body: JSON.stringify({
                 name,
                 description,
-                price: priceValue
+                price: priceValue,
+                imageUrl: imageUrl || null,
+                featured
             })
         });
 
@@ -210,6 +218,9 @@ async function handleCreateProduct(event) {
         }
 
         productForm.reset();
+        if (productFeaturedInput) {
+            productFeaturedInput.checked = true;
+        }
         setProductStatus('Product created successfully.');
         broadcastCatalogUpdate();
         await loadProducts();
@@ -504,4 +515,25 @@ function broadcastCatalogUpdate() {
             // Ignore storage issues; storefront will rely on manual refresh.
         }
     }
+}
+
+function createCell(text) {
+    const cell = document.createElement('td');
+    cell.textContent = text ?? '';
+    return cell;
+}
+
+function createLinkCell(url) {
+    const cell = document.createElement('td');
+    if (url) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = 'Preview';
+        cell.appendChild(link);
+    } else {
+        cell.textContent = '—';
+    }
+    return cell;
 }

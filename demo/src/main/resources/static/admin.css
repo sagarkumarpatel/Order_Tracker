@@ -92,6 +92,7 @@ input[type="text"],
 input[type="password"],
 input[type="number"],
 input[type="datetime-local"],
+input[type="url"],
 select,
 textarea {
     padding: 0.75rem 0.9rem;
@@ -163,6 +164,22 @@ button.secondary:focus {
     align-items: center;
     gap: 1rem;
     grid-column: 1 / -1;
+}
+
+.checkbox-field {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.checkbox-field input[type="checkbox"] {
+    width: auto;
+    transform: scale(1.1);
+}
+
+.checkbox-field span {
+    flex: 1;
 }
 
 .table-card {

@@ -49,16 +49,20 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
 
-        List<Product> demoProducts = List.of(
-                new Product(null, "Wireless Earbuds", "Noise-cancelling earbuds with 24-hour battery life.",
-                        java.math.BigDecimal.valueOf(59.99), LocalDateTime.now().minusDays(2)),
-                new Product(null, "Smart Fitness Watch", "Track workouts, health metrics, and notifications on the go.",
-                        java.math.BigDecimal.valueOf(129.00), LocalDateTime.now().minusDays(1)),
-                new Product(null, "Portable Bluetooth Speaker", "Water-resistant speaker with deep bass and 12-hour playback.",
-                        java.math.BigDecimal.valueOf(89.50), LocalDateTime.now().minusHours(8)),
-                new Product(null, "USB-C Laptop Hub", "Expand to HDMI, Ethernet, USB-A, and SD card slots instantly.",
-                        java.math.BigDecimal.valueOf(39.75), LocalDateTime.now().minusHours(3))
-        );
+    List<Product> demoProducts = List.of(
+        new Product(null, "Wireless Earbuds", "Noise-cancelling earbuds with 24-hour battery life.",
+            java.math.BigDecimal.valueOf(59.99), LocalDateTime.now().minusDays(2), true,
+            "https://images.unsplash.com/photo-1580894908361-967195033215?auto=format&fit=crop&w=640&q=80"),
+        new Product(null, "Smart Fitness Watch", "Track workouts, health metrics, and notifications on the go.",
+            java.math.BigDecimal.valueOf(129.00), LocalDateTime.now().minusDays(1), true,
+            "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=640&q=80"),
+        new Product(null, "Portable Bluetooth Speaker", "Water-resistant speaker with deep bass and 12-hour playback.",
+            java.math.BigDecimal.valueOf(89.50), LocalDateTime.now().minusHours(8), true,
+            "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=640&q=80"),
+        new Product(null, "USB-C Laptop Hub", "Expand to HDMI, Ethernet, USB-A, and SD card slots instantly.",
+            java.math.BigDecimal.valueOf(39.75), LocalDateTime.now().minusHours(3), true,
+            "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=640&q=80")
+    );
 
         productRepository.saveAll(demoProducts);
     }

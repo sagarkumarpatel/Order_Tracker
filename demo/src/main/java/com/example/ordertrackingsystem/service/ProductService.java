@@ -29,6 +29,12 @@ public class ProductService {
     public Product createProduct(Product product) {
         validateProduct(product);
         product.setId(null);
+        product.setName(product.getName().trim());
+        product.setFeatured(product.isFeatured());
+        if (StringUtils.hasText(product.getDescription())) {
+            product.setDescription(product.getDescription().trim());
+        }
+        product.setImageUrl(StringUtils.hasText(product.getImageUrl()) ? product.getImageUrl().trim() : null);
         if (product.getCreatedAt() == null) {
             product.setCreatedAt(LocalDateTime.now());
         }
@@ -38,6 +44,9 @@ public class ProductService {
     private void validateProduct(Product product) {
         if (!StringUtils.hasText(product.getName())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product name is required.");
+        }
+        if (!StringUtils.hasText(product.getDescription())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product description is required.");
         }
         BigDecimal price = product.getPrice();
         if (price == null || price.signum() < 0) {

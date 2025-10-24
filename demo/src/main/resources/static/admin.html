@@ -97,6 +97,14 @@
                 <span>Price</span>
                 <input type="number" id="catalogProductPrice" step="0.01" min="0" placeholder="59.99" required>
             </label>
+            <label>
+                <span>Image URL (optional)</span>
+                <input type="url" id="catalogProductImage" placeholder="https://…">
+            </label>
+            <label class="checkbox-field">
+                <span>Featured Product</span>
+                <input type="checkbox" id="catalogProductFeatured" checked>
+            </label>
             <div class="form-actions">
                 <button type="submit" class="primary">Add Product</button>
                 <button type="button" id="refreshProducts" class="secondary">Refresh List</button>
@@ -111,6 +119,8 @@
                     <th>Name</th>
                     <th>Description</th>
                     <th>Price</th>
+                    <th>Featured</th>
+                    <th>Image</th>
                     <th>Created At</th>
                 </tr>
                 </thead>
