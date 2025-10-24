@@ -1,87 +1,77 @@
 # Order Tracking System
 
-A Spring Boot application for tracking customer orders with role-based security and a lightweight frontend for status updates.
+A Spring Boot 3 application that lets customers browse products, place orders, track delivery status, and manage them through a modern HTML/JavaScript frontend secured by Spring Security.
 
-## Features
+## Highlights
 
-- RESTful CRUD API for managing orders (create, list, retrieve, update, delete, status-only updates, cancel).
-- Spring Data JPA persistence with MySQL in production and H2 in tests.
-- Spring Security basic authentication with ADMIN and USER roles, including ownership checks so customers only see and cancel their own orders.
-- HTML/JavaScript frontend under `src/main/resources/static/index.html` for listing orders, creating new ones, editing, cancelling, and deleting (admin only) via `fetch`.
-- Automatic seeding of three sample orders on startup so you can explore the UI immediately.
+- **Product catalog & cart** – Featured products with imagery, add-to-cart, checkout, and instant order listing on `index.html`.
+- **Dynamic admin console** – `admin.html` allows administrators to create, edit, delete, and mark products as featured.
+- **Order management API** – Full CRUD REST endpoints with ownership rules so customers only see their own orders while admins can manage all.
+- **Database-backed authentication** – Credentials are stored in MySQL, form login is provided at `/login.html`, and new users self-register via `/register.html`.
+- **Seed data** – Sample products and orders are seeded on startup along with a single admin account for first-time access.
 
 ## Project Structure
 
-- `src/main/java/com/example/ordertrackingsystem` – Application entry point and domain packages (`model`, `repository`, `service`, `controller`, `config`).
-- `src/main/resources/application.properties` – MySQL datasource configuration.
-- `src/test/resources/application.properties` – H2 datasource configuration for automated tests.
-- `.vscode/tasks.json` – VS Code task for running `./mvnw -B verify`.
+- `src/main/java/com/example/ordertrackingsystem` – Application entry point plus `config`, `controller`, `model`, `repository`, and `service` packages.
+- `src/main/resources/static` – Frontend assets (`index.html`, `admin.html`, login/registration pages, CSS, JS).
+- `src/main/resources/application.properties` – MySQL connection and security configuration.
+- `src/test/resources/application.properties` – H2 configuration for automated tests.
 
 ## Prerequisites
 
 - JDK 17+
-- Maven wrapper (included)
-- Running MySQL instance with database `order_tracking_db`, user `root`, password `hello1xx` (configurable in `application.properties`).
+- Maven wrapper (bundled)
+- MySQL 8.x with a database named `order_tracking_db`
+  - Default connection details: username `root`, password `hello1xx` (adjust in `application.properties`).
 
-## Running the Application
+## Getting Started
 
-1. Start the backend:
+1. Ensure MySQL is running and the configured schema exists.
+2. From the `demo` directory run:
    ```powershell
    ./mvnw spring-boot:run
    ```
-2. Access the REST API at `http://localhost:8080/api/orders`.
-3. Open the frontend at `http://localhost:8080/index.html` and provide credentials when prompted.
+3. Navigate to `http://localhost:8080/login.html` and sign in.
 
-### Default Credentials
+### Accounts & Roles
 
-- ADMIN: `admin` / `admin123`
-- USER: `user` / `user123`
+- Seeded admin: `admin` / `admin123`
+- Register new customers at `http://localhost:8080/register.html`; emails are stored in lowercase and given the `ROLE_USER` role.
+- After signing in, you are redirected to `index.html`. All other pages (including the storefront) require authentication.
+- REST clients can continue to use HTTP Basic with the same credentials (`Authorization: Basic ...`).
 
-**Admin capabilities:** full CRUD across all orders (create on behalf of any user, edit, update status, cancel, delete).
+### Frontend Entry Points
 
-**User/customer capabilities:** create orders for themselves, view only their own orders, cancel a pending order, and track current status.
+- `login.html` – Custom login experience with success/error messaging.
+- `register.html` – Self-service signup creating database-backed accounts.
+- `index.html` – Main shopping and tracking portal.
+- `admin.html` – Product management interface (available after login; actions require the admin role).
 
-## Testing
+## Running Tests
 
-Run the Maven verify goal (compilation + tests):
+Execute the automated test suite (uses H2, so MySQL is not required):
 ```powershell
-./mvnw -B verify
+./mvnw -B test
 ```
-The build uses an in-memory H2 database so it can run without the MySQL instance.
 
-## API Overview
+## REST API Cheat Sheet
 
-| Method | Path                       | Description                          | Role |
-|--------|----------------------------|--------------------------------------|------|
-| POST   | `/api/orders`              | Create order                          | ADMIN/USER (admin may set owner) |
-| GET    | `/api/orders`              | List accessible orders (all or own)   | ADMIN/USER |
-| GET    | `/api/orders/{id}`         | Retrieve order by id                  | ADMIN/USER (own orders only for users) |
-| PUT    | `/api/orders/{id}`         | Update order                          | ADMIN |
-| PATCH  | `/api/orders/{id}/status`  | Update only order status              | ADMIN |
-| PATCH  | `/api/orders/{id}/cancel`  | Cancel order (user before shipping)   | ADMIN/USER |
-| DELETE | `/api/orders/{id}`         | Delete order                          | ADMIN |
+| Method | Path                      | Description                             | Role |
+|--------|---------------------------|-----------------------------------------|------|
+| POST   | `/api/orders`             | Create a new order                      | ADMIN/USER |
+| GET    | `/api/orders`             | List orders (own orders for users)      | ADMIN/USER |
+| GET    | `/api/orders/{id}`        | Retrieve order by id                    | ADMIN/USER (own only) |
+| PUT    | `/api/orders/{id}`        | Update order                            | ADMIN |
+| PATCH  | `/api/orders/{id}/status` | Update only the status                  | ADMIN |
+| PATCH  | `/api/orders/{id}/cancel` | Cancel order (pending/processing only)  | ADMIN/USER |
+| DELETE | `/api/orders/{id}`        | Delete order                            | ADMIN |
+| GET    | `/api/products`           | Fetch all products                      | ADMIN/USER |
+| POST   | `/api/products`           | Create product                          | ADMIN |
 
-All endpoints require HTTP Basic authentication.
-
-## Frontend Usage
-
-1. Open `http://localhost:8080/index.html` while the app runs.
-2. Enter credentials.
-   - Admin sessions show full controls (status dropdowns, edit/delete/cancel buttons, owner override when creating).
-   - User sessions show only their orders along with cancel buttons for pending orders.
-3. Click **Load Orders** to fetch data.
-4. Use the create form, edit panel, cancellation, and (for admins) status/update/delete actions as needed.
-
-## Sample cURL Commands
-
-See `curl` snippets in the assistant response history or adapt the following template:
-```bash
-curl -u admin:admin123 -X PATCH http://localhost:8080/api/orders/1/status \
-  -H "Content-Type: application/json" \
-  -d '{"status":"Shipped"}'
-```
+All API routes require authentication via form login session or HTTP Basic.
 
 ## Notes
 
-- Adjust datasource credentials and Hibernate settings in `application.properties` as needed.
-- Update the in-memory test data or add further integration tests to cover new business logic.
+- Database seeding creates demo orders that reference sample usernames; newly registered users can create and track their own orders immediately.
+- Adjust login redirects, password rules, or product seeding by modifying the classes under `config` and `service`.
+- For production, update the datasource credentials and disable Spring DevTools if not needed.

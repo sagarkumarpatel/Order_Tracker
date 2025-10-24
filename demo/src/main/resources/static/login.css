@@ -1,0 +1,128 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Poppins', Arial, sans-serif;
+    background: linear-gradient(160deg, #00708a 0%, #0c3c5d 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-wrapper {
+    width: min(420px, 92vw);
+}
+
+.login-card {
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 2.5rem 2.75rem;
+    box-shadow: 0 25px 60px rgba(0, 32, 63, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 1.35rem;
+}
+
+.login-title {
+    margin: 0 0 0.25rem;
+    text-align: center;
+    font-size: 2rem;
+    color: #11425d;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: #344655;
+}
+
+.field input[type="text"],
+.field input[type="password"] {
+    padding: 0.85rem 1rem;
+    border-radius: 0.65rem;
+    border: 1px solid rgba(0, 93, 135, 0.2);
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field input:focus {
+    outline: none;
+    border-color: #007aa3;
+    box-shadow: 0 0 0 3px rgba(0, 122, 163, 0.2);
+}
+
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.95rem;
+    color: #34596b;
+}
+
+.checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.login-button {
+    margin-top: 0.5rem;
+    background: #00698c;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 0.65rem;
+    padding: 0.9rem 1.2rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.login-button:hover,
+.login-button:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px rgba(0, 67, 94, 0.3);
+}
+
+.login-message {
+    min-height: 1.25rem;
+    text-align: center;
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: #d12b3d;
+}
+
+.login-message.is-success {
+    color: #17643a;
+}
+
+.auth-footnote {
+    margin: 0;
+    text-align: center;
+    font-size: 0.95rem;
+    color: #3e5565;
+}
+
+.auth-footnote a {
+    color: #00698c;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-footnote a:hover,
+.auth-footnote a:focus {
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .login-card {
+        padding: 2rem 1.75rem;
+    }
+}

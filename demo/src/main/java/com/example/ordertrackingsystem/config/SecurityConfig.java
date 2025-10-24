@@ -7,12 +7,8 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -31,46 +27,42 @@ public class SecurityConfig {
     }
 
     /**
-     * Registers in-memory users representing the ADMIN and USER roles.
-     */
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails admin = User.withUsername("admin")
-                .password(passwordEncoder.encode("admin123"))
-                .roles("ADMIN")
-                .build();
-
-        UserDetails user = User.withUsername("user")
-                .password(passwordEncoder.encode("user123"))
-                .roles("USER")
-                .build();
-
-        return new InMemoryUserDetailsManager(admin, user);
-    }
-
-    /**
      * Configures HTTP Basic security along with role-based authorization for each HTTP method.
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+    http
+        .csrf(csrf -> csrf.disable())
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
         .authorizeHttpRequests(auth -> auth
-        .requestMatchers("/", "/index.html", "/style.css", "/script.js",
-            "/admin.html", "/admin.css", "/admin.js").permitAll()
-            .requestMatchers(HttpMethod.GET, "/track/**").permitAll()
-        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-        .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
-            .requestMatchers(HttpMethod.POST, "/api/orders/**").hasAnyRole("ADMIN", "USER")
+            .requestMatchers("/error").permitAll()
+            .requestMatchers("/login", "/login.html", "/login.css", "/login.js").permitAll()
+            .requestMatchers("/register", "/register.html", "/register.css", "/register.js").permitAll()
+            .requestMatchers("/favicon.ico", "/assets/**").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
             .requestMatchers(HttpMethod.PUT, "/api/orders/**").hasRole("ADMIN")
             .requestMatchers(HttpMethod.PATCH, "/api/orders/*/cancel").hasAnyRole("ADMIN", "USER")
             .requestMatchers(HttpMethod.PATCH, "/api/orders/**").hasRole("ADMIN")
             .requestMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.POST, "/api/orders/**").hasAnyRole("ADMIN", "USER")
             .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAnyRole("ADMIN", "USER")
+            .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("ADMIN", "USER")
+            .requestMatchers(HttpMethod.GET, "/track/**").hasAnyRole("ADMIN", "USER")
             .anyRequest().authenticated()
         )
-                .httpBasic(Customizer.withDefaults());
+        .formLogin(form -> form
+            .loginPage("/login.html")
+            .loginProcessingUrl("/login")
+            .defaultSuccessUrl("/index.html", true)
+            .failureUrl("/login.html?error=true")
+            .permitAll()
+        )
+        .logout(logout -> logout
+            .logoutUrl("/logout")
+            .logoutSuccessUrl("/login.html?logout=true")
+            .permitAll()
+        )
+        .httpBasic(Customizer.withDefaults());
 
         return http.build();
     }

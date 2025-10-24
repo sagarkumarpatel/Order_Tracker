@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Tracking System – Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="login.css">
+</head>
+<body>
+<main class="login-wrapper">
+    <form class="login-card" method="post" action="/login">
+        <h1 class="login-title">Login</h1>
+        <p id="loginMessage" class="login-message" role="alert" aria-live="polite"></p>
+        <label class="field">
+            <span>Email</span>
+            <input type="email" name="username" placeholder="Enter email" autocomplete="username" required autofocus>
+        </label>
+        <label class="field">
+            <span>Password</span>
+            <input type="password" id="password" name="password" placeholder="Enter password" autocomplete="current-password" required>
+        </label>
+        <label class="checkbox">
+            <input type="checkbox" id="togglePassword">
+            <span>Show Password</span>
+        </label>
+        <button type="submit" class="login-button">Sign In</button>
+        <p class="auth-footnote">Need an account? <a href="/register.html">Create one now</a>.</p>
+    </form>
+</main>
+<script defer src="login.js"></script>
+</body>
+</html>
